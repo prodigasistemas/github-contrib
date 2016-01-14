@@ -17,7 +17,7 @@ https://github.com/settings/tokens
 * Git 2
 
 ## Local installation
-    git clone https://github.com/luizsanches/github-contrib.git
+    git clone git@github.com:prodigasistemas/github-contrib.git
 
     cd github-contrib
 
