@@ -103,6 +103,9 @@ class Github
           if reason.to_s.include? "409 Conflict"
             puts "WARNING: repository can be empty"
             break
+          elsif reason.to_s.include? "403 Forbidden"
+            puts "WARNING: repository unavailable"
+            break
           else
             puts "ERROR: #{reason}"
             exit
