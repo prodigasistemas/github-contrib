@@ -82,7 +82,7 @@ class Github
       repos.each do |repo|
         @repositories << {
           name: repo['full_name'],
-          private: (repo['private'] == 'true' ? 'private' : 'public'),
+          private: (repo['private'] ? 'private' : 'public'),
           fork: repo['fork'],
           language: repo['language']
         }
