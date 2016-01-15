@@ -27,7 +27,8 @@ https://github.com/settings/tokens
     ruby contrib.rb [personal-access-token]
 
 ## Result
-    [username]_github_contributions.csv
+    [username]_github_contributions_details.csv
+    [username]_github_contributions_summary.csv
 
 ## License
 [MIT License](http://www.opensource.org/licenses/MIT).

@@ -4,7 +4,8 @@ require 'date'
 require 'csv'
 
 class Github
-  attr_accessor :token, :user_login, :user_name, :repositories, :csv_file
+  attr_accessor :token, :user_login, :user_name, :repositories,
+    :csv_file_details, :csv_file_summary
 
   def initialize(token)
     @token = token
@@ -32,12 +33,27 @@ class Github
 
     @user_login = user['login']
     @user_name = user['name']
-    @csv_file = "./#{@user_login}_github_contributions.csv"
-
-    File.delete(@csv_file) if File.exist?(@csv_file)
 
     puts "> Login: #{user_login}"
     puts "> Name: #{user_name}"
+
+    prepare_csv_files
+  end
+
+  def prepare_csv_files
+    @csv_file_details = "./#{@user_login}_github_contributions_details.csv"
+    @csv_file_summary = "./#{@user_login}_github_contributions_summary.csv"
+
+    File.delete(@csv_file_details) if File.exist?(@csv_file_details)
+    File.delete(@csv_file_summary) if File.exist?(@csv_file_summary)
+
+    CSV.open(@csv_file_details, "a") do |csv|
+      csv << ["Repository", "Date", "Message"]
+    end
+
+    CSV.open(@csv_file_summary, "a") do |csv|
+      csv << ["Repository", "Visibility", "Language", "Contributions"]
+    end
   end
 
   def get_repos
@@ -64,7 +80,12 @@ class Github
       end
 
       repos.each do |repo|
-        @repositories << repo['full_name']
+        @repositories << {
+          name: repo['full_name'],
+          private: (repo['private'] == 'true' ? 'private' : 'public'),
+          fork: repo['fork'],
+          language: repo['language']
+        }
       end
 
       page += 1
@@ -74,9 +95,10 @@ class Github
 
   def get_commits
     total_size = @repositories.size
+    total_contributions = 0
 
     @repositories.each_with_index do |repo, index|
-      puts "> #{index + 1}/#{total_size} - Getting commits the #{repo} repository ..."
+      puts "> Repository #{index + 1}/#{total_size} - Getting commits the #{repo[:name]} ..."
 
       page = 1
       contributions = []
@@ -84,7 +106,7 @@ class Github
       while true do
         begin
           commits = MultiJson.load(
-            open("https://api.github.com/repos/#{repo}/commits?author=#{@user_login}&page=#{page}",
+            open("https://api.github.com/repos/#{repo[:name]}/commits?author=#{@user_login}&page=#{page}",
               "Authorization" => "token #{@token}"
             )
           )
@@ -113,15 +135,26 @@ class Github
         end
       end
 
-      if contributions.size > 0
-        puts "= #{contributions.size} contributions"
+      size_contributions = contributions.size
+      total_contributions += size_contributions
 
-        CSV.open(@csv_file, "a") do |csv|
+      if size_contributions > 0
+        puts "= #{size_contributions} contributions"
+
+        CSV.open(@csv_file_details, "a") do |csv|
           contributions.each do |line|
-            csv << [repo, line[:date], line[:message]]
+            csv << [repo[:name], line[:date], line[:message]]
           end
         end
+
+        CSV.open(@csv_file_summary, "a") do |csv|
+          csv << [repo[:name], repo[:private], repo[:language], size_contributions]
+        end
       end
+    end
+
+    CSV.open(@csv_file_summary, "a") do |csv|
+      csv << ["Total", "", "", total_contributions]
     end
 
     puts "> Done!"
