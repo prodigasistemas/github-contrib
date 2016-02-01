@@ -128,9 +128,12 @@ class Github
           elsif reason.to_s.include? "403 Forbidden"
             puts "WARNING: repository unavailable"
             break
+          elsif reason.to_s.include? "404 Not Found"
+            puts "WARNING: This repository has been disabled"
+            break
           else
             puts "ERROR: #{reason}"
-            exit
+            break
           end
         end
       end
